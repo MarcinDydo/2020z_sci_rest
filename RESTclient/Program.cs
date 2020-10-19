@@ -42,6 +42,7 @@ namespace StockClient
             var response = c.Execute(request);
             List<Company> list = JsonConvert.DeserializeObject<List<Company>>(response.Content);
             Company[] companies = list.ToArray();
+            Console.WriteLine(response.Content);
             return companies;
         }
 
@@ -52,22 +53,53 @@ namespace StockClient
             var response = c.Execute(request);
             Console.WriteLine(response.Content);
         }
-        static void Main(string[] args) 
+
+        static void Main(string[] args)
         {
             var client = new RestClient("https://stockserver20201009223011.azurewebsites.net/");
             client.Authenticator = new HttpBasicAuthenticator("01149354@pw.edu.pl", "sci2020");
+            UpdateInfo(client);
+            //basic transactions
+            int amount = 1;
+            string buy, sell; //where we buy where we sell
+            //Offer("Warszawa", "CCC", "buy", requestPrice("Warszawa", "CCC", client)[1].price, amount, client);
+            //Offer("Warszawa", "CCC", "sell", requestPrice("Warszawa", "CCC", client)[0].price, amount, client);
+            string[] vector = System.IO.File.ReadAllLines("/Users/marcin/Projects/RESTclient/RESTclient/stockExchanges.json");
+            for(int s =1; s<vector.Length;s++)
+            {
+                string[] A = System.IO.File.ReadAllLines("/Users/marcin/Projects/RESTclient/RESTclient/Warszawa.json");
+                string[] B = System.IO.File.ReadAllLines("/Users/marcin/Projects/RESTclient/RESTclient/" + vector[s] + ".json");
+                for (int i = 0; i < B.Length; i++)
+                {
+                    if (Array.BinarySearch(A, B[i]) >= 0) {
+                        Company[] w = requestPrice("Warszawa", B[i], client);
+                        Company[] o = requestPrice(vector[s], B[i], client);
+                        if (w[1].price < o[1].price) buy = "Warszawa";
+                        else buy = vector[s];
+                        if (w[0].price > o[0].price) sell = "Warszawa";
+                        else sell = vector[s];
+                        if (!buy.Equals(sell) && Math.Max(w[0].price,o[0].price)>Math.Min(w[1].price,o[1].price))
+                        {
+                            Offer(buy, B[i], "buy", Math.Min(w[1].price,o[1].price), amount, client);
+                            Offer(sell, B[i], "sell", Math.Max(w[0].price, o[0].price), amount, client);
+                        }
+                        
+                    }
+                }
+            }
+
+
+        }
+
+        private static void UpdateInfo(RestClient client)
+        {
             //request current stock exchange list -> .json
             System.IO.File.WriteAllLines("/Users/marcin/Projects/RESTclient/RESTclient/stockExchanges.json", requestStock(client));
             //request for each SE companies listing -> .json
-            foreach (string s in System.IO.File.ReadLines("/Users/marcin/Projects/RESTclient/RESTclient/stockExchanges.json"))
+            foreach (string s in System.IO.File.ReadAllLines("/Users/marcin/Projects/RESTclient/RESTclient/stockExchanges.json"))
             {
                 System.IO.File.WriteAllLines("/Users/marcin/Projects/RESTclient/RESTclient/" + s + ".json", requestShares(s, client));
             }
-            //basic transactions
-            int amount = 1;
-            Offer("Warszawa", "CCC", "buy", requestPrice("Warszawa","CCC",client)[1].price , amount, client);
-            Offer("Warszawa", "CCC", "sell", requestPrice("Warszawa", "CCC", client)[0].price, amount, client);
-            Console.ReadKey();
         }
     }
 }
