@@ -403,3 +403,11 @@ ASALocalRun/
 
 # Local History for Visual Studio
 .localhistory/
+
+# json files
+Londyn.json
+Paryz.json
+Praga.json
+stockExchanges.json
+Warszawa.json
+Wieden.json
