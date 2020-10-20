@@ -3,7 +3,6 @@ using RestSharp;
 using Newtonsoft.Json;
 using RestSharp.Authenticators;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace StockClient
 {
@@ -105,7 +104,7 @@ namespace StockClient
                             double commision = 0.002 * amount * (sellprice + buyprice);
                             double income = amount * (sellprice - buyprice);
                             //info about 2 compared stocks
-                            Console.WriteLine("comparing " + B[i] + "on Warszawa & " + vector[s]);
+                            Console.WriteLine("comparing " + B[i] + " on Warszawa & " + vector[s]);
                             Console.WriteLine("amount = " + amount + " income =" + income + " commision =" + commision + " profit =" + (income - commision));
                             if(!buy.Equals(sell) && income - commision > 0)
                             {
@@ -145,22 +144,6 @@ namespace StockClient
                 }
             }
         }
-        private static int getAmount(string com, RestClient client)
-        {
-            var request = new RestRequest("client", Method.GET, DataFormat.Json);
-            var response = client.Execute(request);
-            int i = response.Content.Substring(2).IndexOf("{") + 3;
-            string cut = response.Content.Substring(i, response.Content.Length - i - 2).Replace((char)92, ' ').Replace((char)34, ' ');
-            string[] shares = cut.Split(",");
-            foreach (string s in shares)
-            {
-                if (s.Contains(com))
-                {
-                    return Int32.Parse(s.Split(":")[1]);
-                }
-            }
-            return 0;
-        }
         private static void UpdateInfo(RestClient client)
         {
             //request current stock exchange list -> .json
@@ -170,6 +153,12 @@ namespace StockClient
             {
                 System.IO.File.WriteAllLines("/Users/marcin/Projects/RESTclient/RESTclient/" + s + ".json", requestShares(s, client));
             }
+            //request history
+            var request = new RestRequest("history", Method.GET, DataFormat.Json);
+            var response = client.Execute(request);
+            System.IO.File.WriteAllText("/Users/marcin/Projects/RESTclient/RESTclient/history.json", response.Content.Replace(",",",\n"));
+            //string[] history = response.Content.Split("}");
+            //System.IO.File.WriteAllLines("/Users/marcin/Projects/RESTclient/RESTclient/history.json", history);
         }
     }
 }
